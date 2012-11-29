@@ -5,9 +5,19 @@ A VIM Plugin For CDMI.
 
 For questsions email: mross@mezeo.com
 
+#Dependencies
+
+The vim-cdmi plugin requires vim to be compiled with python support. To check this:
+
+    vim --version | grep +python
+
+Also the requests python package should be installed on the system:
+
+    pip install requests
+
 #Configuration:
 
-Add the following attributes to your vimrc:
+Add the following to your vimrc:
 
     let g:cdmi_version="1.0.1'
     let g:cdmi_host="mcsp1.cloud"
@@ -22,11 +32,11 @@ Open a vim buffer:
 
     vim
 
-Source the vim file:
+Source the .vim plugin file:
 
     :source vim-cdmi/vim-cdmi.vim
 
-Note: You can have pathogen source this for you everytime vim load
+Note: You can have pathogen source this for you everytime vim loads.
 
 Get a CDMI Object and write it into the buffer:
 
@@ -35,5 +45,3 @@ Get a CDMI Object and write it into the buffer:
 Write the object in the current buffer to the CDMI Server
 
     :CDMIw
-
-
