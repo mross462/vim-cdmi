@@ -23,7 +23,7 @@ Add the following to your vimrc:
     let g:cdmi_host="mcsp1.cloud"
     let g:cdmi_user="administrator"
     let g:cdmi_adminpassword="wnxy68Z/CJYDIfDsJ9qoWg"
-    let g:cdmi_secure=True
+    let g:cdmi_secure="True"
 
     :command -nargs=+ -complete=command CDMIe call CDMIE(<f-args>)
     :command CDMIw call CDMIW()
