@@ -145,13 +145,12 @@ try:
     print response.status_code
     response.raise_for_status()
 
-    # Get the Object Resource
-    response = requests.get(url='https://mcsp1.cloud' + object_path,
-            headers=hdr,
-            auth=('administrator',
-                    #adminpassword),
-                    'mezeo'),
-            verify=False)
+    # Get the resource
+    response = requests.get(url=url,
+                headers=hdr,
+                auth=(user,
+                      adminpassword),
+                verify=False)
 
     response_body = response.json
 
