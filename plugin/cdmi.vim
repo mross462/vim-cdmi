@@ -5,6 +5,8 @@ if !has('python')
         finish
     endif
 
+:command -nargs=+ -complete=command CDMIe call CDMIE(<f-args>)
+:command CDMIw call CDMIW()
 
 function! CDMIE(cdmi_path)
 "   CDMIE()
