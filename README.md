@@ -20,7 +20,7 @@ Also the requests python package should be installed on the system:
 Using pathogen, simply run:
 
     cd ~/.vim/bundle
-        git clone git://github.com/mross462/vim-cdmi.git
+    git clone git://github.com/mross462/vim-cdmi.git
 
 #Configuration:
 
@@ -32,10 +32,34 @@ Add the following to your vimrc:
     let g:cdmi_adminpassword="wnxy68Z/CJYDIfDsJ9qoWg"
     let g:cdmi_secure="True"
 
-Get a CDMI Object and write it into the buffer:
+Interacting with CDMI
+--------------------
 
-    :CDMIe /cdmi
+###Get a CDMI Object and write it into the buffer:
 
-Write the object in the current buffer to the CDMI Server
+    :CDMIe /cdmi 
+
+###Get of a child of the object in the curent buffer: 
+
+    :CDIMe /cdmi 
+
+Returns the following children:
+
+    "children": [
+        "cdmi_capabilities/", 
+        "cdmi_domains/", 
+        "storage_root/", 
+        "system_configuration/"
+    ], 
+
+To Get the storage_root child:
+
+    :CDMIe /storage_root
+
+###Get the parent object of the current buffer:
+
+    :CDMIe ..
+
+###Write the object in the current buffer to the CDMI Server
 
     :CDMIw

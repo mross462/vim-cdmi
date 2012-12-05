@@ -33,10 +33,11 @@ python << EOF
 import vim
 import json
 import requests
-import time
+import types
+from time import localtime, strftime
 
 #Get the args from the VIM Function
-path = vim.eval("a:cdmi_path")
+path = vim.eval("a:cdmi_path").rstrip("/").lstrip("/")
 
 #Set our variables that we get from our vimrc
 version = vim.eval('g:cdmi_version')
@@ -46,6 +47,18 @@ adminpassword = vim.eval('g:cdmi_adminpassword')
 secure = bool(vim.eval('g:cdmi_secure'))
 
 try:
+
+    #Check to see if we have a current buffer if we do parse it out 
+    buffer_data = ''.join(vim.current.buffer)
+
+    try:
+        current_object = {}
+        current_object = json.loads(buffer_data)
+
+    except ValueError, TypeError:
+        #The object in the buffer is not json serializeable
+        pass
+
     #Create the hdr dict and append our CDMI Version Header
     hdr = {'X-CDMI-Specification-Version': version}
 
@@ -55,23 +68,56 @@ try:
     else:
         schema = 'http://'
 
-    url = schema + host + path
+    #Determine if the path specified in the function args is contained 
+    #in the children of current object in the buffer. If it isn't, default
+    #to an empty list
 
-    # Get the resource
+    children = current_object.get('children', [])
+
+    if path == '..':
+        #Navigate to the parent object
+        parent = current_object.get('parentURI')
+        url = schema + host + parent
+
+    #Check to see if the children list is empty,
+    elif len(children) == 0:
+        #We know the path is an relative URI
+        url = schema + host + '/' + path
+
+    elif path + '/' in children:
+
+        #The path is relative to the current object in the buffer
+        obj = current_object.get('objectName')
+        parent = current_object.get('parentURI')
+
+        if obj == '/':
+            #The current object is the CDMI endpoint
+            url = schema + host + '/cdmi/' + path
+
+        else:
+            #The current object is not the CDMI endpoint
+            url = schema + host + parent + obj + '/' + path
+
+    request_time = strftime("Local:%a, %d %b %Y %H:%M:%S +0000", localtime())
     response = requests.get(url=url,
                 headers=hdr,
                 auth=(user,
                       adminpassword),
                 verify=False)
 
-    print response.status_code
-    response_body = response.json
+    response.raise_for_status()
 
-    #Format the response into a list of lines and strip the newline
-    formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
+    print 'Object: %s' % url
+    print 'Status: %s' % response.status_code
+    print 'Time: %s' % request_time
+
+    response_body = response.json
 
     #Clear the current buffer
     del vim.current.buffer[:]
+
+    #Format the response into a list of lines and strip the newline
+    formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
 
     #Add each line of the fomatted output to the buffer
     for line in formatted_response:
