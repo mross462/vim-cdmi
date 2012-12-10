@@ -86,7 +86,9 @@ try:
         #We know the path is an relative URI
         url = schema + host + '/' + path
 
-    elif path + '/' in children:
+    elif path + '/' in children or \
+         path in children:
+
         obj = current_object.get('objectName').rstrip("/")
         parent = current_object.get('parentURI')
 
@@ -104,18 +106,47 @@ try:
     #Clear the current buffer
     del vim.current.buffer[:]
 
+    '''
+
+    This Client is designed to be innocent of the objectType
+    it is requesting. The current CDMI Spec requires that a GET of 
+    an object that has children to have a trailing '/' otherwise 
+    return a 409 status code. Since this is the case, the client Needs
+    to be smart about what it receives, and append that '/' if 
+    necessary
+
+    '''
+
     if user is None:
-        #this cdmi server doesn't require authentication:
+        #This CDMI Server Does Not Require Authentication
         response = requests.get(url=url,
                 headers=hdr,
-                verify=false)
+                verify=False)
+
+        if response.status_code == 409:
+            #We need to append a '/'
+            url = url + '/'
+
+        response = requests.get(url=url,
+            headers=hdr,
+            verify=False)
 
     else:
-        #Make the HTTP GET Request for the Object
+        #This CDMI Server Requires Authentication
         response = requests.get(url=url,
                 headers=hdr,
                 auth=(user,
-                      adminpassword),
+                    adminpassword),
+                verify=False)
+
+        if response.status_code == 409:
+            #We need to append a '/'
+            url = url + '/'
+
+        response = requests.get(url=url,
+                headers=hdr,
+                auth=(user,
+                    adminpassword),
                 verify=False)
 
     #If there is an HTTP error raise it
