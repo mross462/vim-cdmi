@@ -63,7 +63,7 @@ try:
     hdr = {'X-CDMI-Specification-Version': version}
 
     #Generate The URL
-    if secure:
+    if secure == 'True':
         schema = 'https://'
     else:
         schema = 'http://'
@@ -87,9 +87,7 @@ try:
         url = schema + host + '/' + path
 
     elif path + '/' in children:
-
-        #The path is relative to the current object in the buffer
-        obj = current_object.get('objectName')
+        obj = current_object.get('objectName').rstrip("/")
         parent = current_object.get('parentURI')
 
         if obj == '/':
@@ -103,8 +101,18 @@ try:
     # Mark the time the request is made
     request_time = strftime("Local:%a, %d %b %Y %H:%M:%S +0000", localtime())
 
-    #Make the HTTP GET Request for the Object
-    response = requests.get(url=url,
+    #Clear the current buffer
+    del vim.current.buffer[:]
+
+    if user is None:
+        #this cdmi server doesn't require authentication:
+        response = requests.get(url=url,
+                headers=hdr,
+                verify=false)
+
+    else:
+        #Make the HTTP GET Request for the Object
+        response = requests.get(url=url,
                 headers=hdr,
                 auth=(user,
                       adminpassword),
@@ -166,43 +174,58 @@ adminpassword = vim.eval('g:cdmi_adminpassword')
 secure = bool(vim.eval('g:cdmi_secure'))
 
 try:
-    #Create the hdr dict and append our CDMI Version Header
+    # Create the hdr dict and append our CDMI Version Header
     hdr = {'X-CDMI-Specification-Version': version}
 
-    #Generate The URL
-    if secure:
+    # Generate The URL
+    if secure == 'True':
         schema = 'https://'
     else:
         schema = 'http://'
 
-    #Get each line in the buffer and write that to payload_data
+    # Get each line in the buffer and write that to payload_data
     payload_data = ''.join(vim.current.buffer)
 
-    #Since the payload_data is a valid json string, lets convert it
+    # Since the payload_data is a valid json string, lets convert it
     #to a dictionary so we can access the attributes
     payload = json.loads(payload_data)
 
-    #Parse out the content type and objectID from from the payload
+    # Parse out the content type and objectID from from the payload
     object_path = '/cdmi/cdmi_objectid/' + payload.get('objectID')
     object_type = payload.get('objectType')
 
-    #Add the Content-Type header to the headers list
+    # Add the Content-Type header to the headers list
     hdr['Content-Type'] = object_type
 
     url = schema + host + object_path
 
-    # Do an HTTP PUT for the Object Resource that was created
-    response = requests.put(url=url,
-            headers=hdr,
-            data=payload_data,
-            auth=(user,
-                  adminpassword),
-            verify=False)
+    #Clear the current buffer
+    del vim.current.buffer[:]
 
-    print response.status_code
+    if user is None:
+        #this cdmi server doesn't require authentication:
+        response = requests.put(url=url,
+                data=payload_data,
+                headers=hdr,
+                verify=false)
+    else:
+        # Do an HTTP PUT for the Object Resource that was created
+        response = requests.put(url=url,
+                headers=hdr,
+                data=payload_data,
+                auth=(user,
+                    adminpassword),
+                verify=False)
+
+    # Print out some basic information in the vim terminal for the user
+    print 'Object: %s' % url
+    print 'Status: %s' % response.status_code
+    print 'Time: %s' % request_time
+
     response.raise_for_status()
 
-    # Get the resource
+    else
+        # Get the resource
     response = requests.get(url=url,
                 headers=hdr,
                 auth=(user,
@@ -211,12 +234,13 @@ try:
 
     response_body = response.json
 
-    #Format the response into a list of lines and strip the newline
+    # Format the response into a list of lines and strip the newline
     formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
 
-    #Clear the current buffer
+    # Clear the current buffer
     del vim.current.buffer[:]
-    #Add each line of the fomatted output to the buffer
+
+    # Add each line of the fomatted output to the buffer
     for line in formatted_response:
         vim.current.buffer.append("%s"%line)
 
