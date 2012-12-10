@@ -1,7 +1,8 @@
 vim-cdmi
 ========
 
-A VIM Plugin For CDMI.
+A VIM Plugin for that will load CDMI objects into a VIM buffer. The user can make
+changes to the object, and then write it back to the server.
 
 For questsions email: mross@mezeo.com
 
