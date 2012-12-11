@@ -26,7 +26,6 @@ function! CDMIE(cdmi_path)
 python << EOF
 
 #Now we're in python
-
 import vim
 import json
 import requests
@@ -50,9 +49,16 @@ try:
     # Check to see if the current buffer conatins a CDMI object
     buffer_data = ''.join(vim.current.buffer)
 
+    children = []
+
     try:
         current_object = {}
         current_object = json.loads(buffer_data)
+
+        #Get the attributes that we need from the current object
+        parent = current_object.get('parentURI')
+        obj = current_object.get('objectName')
+        children = current_object.get('children', [])
 
     except ValueError, TypeError:
         # The object in the buffer is not json serializeable and
@@ -63,7 +69,7 @@ try:
     hdr = {'X-CDMI-Specification-Version': version}
 
     #Generate The URL
-    if secure == 'True':
+    if secure is True:
         schema = 'https://'
     else:
         schema = 'http://'
@@ -74,12 +80,18 @@ try:
     to an empty list.
     '''
 
-    children = current_object.get('children', [])
+    if path == '.':
+        if obj == '/':
+            url = schema + host + obj
+        else:
+            url = schema + host + parent + obj 
 
-    if path == '..':
+    elif path == '..':
         #Navigate to the parent object
-        parent = current_object.get('parentURI')
-        url = schema + host + parent
+        if obj == '/':
+            print 'You are at the top level object.'
+        else:
+            url = schema + host + parent
 
     #Check to see if the children list is empty,
     elif len(children) == 0:
@@ -89,22 +101,19 @@ try:
     elif path + '/' in children or \
          path in children:
 
-        obj = current_object.get('objectName').rstrip("/")
-        parent = current_object.get('parentURI')
-
-        if obj == '/':
+         if obj == '/':
             #The current object is the CDMI endpoint
             url = schema + host + '/cdmi/' + path
 
-        else:
+         else:
             #The current object is not the CDMI endpoint
+            obj.rstrip('/')
             url = schema + host + parent + obj + '/' + path
 
+    else:
+        url = schema + host + '/' + path
     # Mark the time the request is made
     request_time = strftime("Local:%a, %d %b %Y %H:%M:%S +0000", localtime())
-
-    #Clear the current buffer
-    del vim.current.buffer[:]
 
     '''
 
@@ -154,20 +163,23 @@ try:
 
     # Print out some basic information in the vim terminal for the user
     print 'Object: %s' % url
-    print 'Status: %s' % response.status_code
+    print 'GET Status: %s' % response.status_code
     print 'Time: %s' % request_time
 
     response_body = response.json
 
-    #Clear the current buffer
-    del vim.current.buffer[:]
+    if response.status_code <= 400:
+        #Write the object to the buffer
 
-    #Format the response into a list of lines and strip the newline
-    formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
+        #Clear the current buffer
+        del vim.current.buffer[:]
 
-    #Add each line of the fomatted output to the buffer
-    for line in formatted_response:
-        vim.current.buffer.append("%s"%line)
+        #Format the response into a list of lines and strip the newline
+        formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
+
+        #Add each line of the fomatted output to the buffer
+        for line in formatted_response:
+            vim.current.buffer.append("%s"%line)
 
 except Exception, e:
     print e
@@ -209,7 +221,7 @@ try:
     hdr = {'X-CDMI-Specification-Version': version}
 
     # Generate The URL
-    if secure == 'True':
+    if secure is True:
         schema = 'https://'
     else:
         schema = 'http://'
@@ -250,30 +262,37 @@ try:
 
     # Print out some basic information in the vim terminal for the user
     print 'Object: %s' % url
-    print 'Status: %s' % response.status_code
+    print 'PUT Status: %s' % response.status_code
     print 'Time: %s' % request_time
 
     response.raise_for_status()
 
-    else
-        # Get the resource
-    response = requests.get(url=url,
+    if user is None:
+        #This CDMI Server Does Not Require Authentication
+        response = requests.get(url=url,
                 headers=hdr,
-                auth=(user,
-                      adminpassword),
                 verify=False)
 
-    response_body = response.json
+    else:
+        #This CDMI Server Requires Authentication
+        response = requests.get(url=url,
+                headers=hdr,
+                auth=(user,
+                    adminpassword),
+                verify=False)
 
-    # Format the response into a list of lines and strip the newline
-    formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
+    if response.status_code <= 400:
+        #Write the new line to the buffer
 
-    # Clear the current buffer
-    del vim.current.buffer[:]
+        # Format the response into a list of lines and strip the newline
+        formatted_response = json.dumps(response_body, sort_keys=True, indent=4).splitlines()
 
-    # Add each line of the fomatted output to the buffer
-    for line in formatted_response:
-        vim.current.buffer.append("%s"%line)
+        # Clear the current buffer
+        del vim.current.buffer[:]
+
+        # Add each line of the fomatted output to the buffer
+        for line in formatted_response:
+            vim.current.buffer.append("%s"%line)
 
 except Exception, e:
     print e
