@@ -1,12 +1,13 @@
+
 " Vim Needs to be compiled with python, so let's check for it.
 if !has('python')
-    echo "Error: Required vim compiled with +python"
+    echo "Error: Vim needs to be compiled with +python support"
         finish
     endif
 
 " Declare commands for vim
 :command -nargs=+ -complete=command CDMIe call CDMIE(<f-args>)
-:command CDMIw call CDMIW()
+
 
 function! CDMIE(cdmi_path)
 "   CDMIE()
@@ -22,9 +23,20 @@ function! CDMIE(cdmi_path)
 "    Raises
 "        Exception: Any python exception is caught and reported
 "
+"
+
+" Load the syntax file from the repo
+
+" Create a temporary file for the buffer
+w! $TMPDIR/tmp.cdmi
+
+" Turn on syntax highlighting for a CDMI JSON object
+au! BufRead,BufNewFile *.cdmi set filetype=cdmi
+au! Syntax cdmi source ./plugin/cdmi_syntax.vim
+let b:current_syntax = "cdmi"
+
 " Begin Python Code
 python << EOF
-
 #Now we're in python
 import vim
 import json
@@ -185,9 +197,13 @@ except Exception, e:
     print e
 
 EOF
+
+" Write the contents of the buffer to the temp file
+w! $TMPDIR/tmp.cdmi
 endfunction
 
 
+:command CDMIw call CDMIW()
 function! CDMIW()
 "   CDMIW()
 "
@@ -298,4 +314,8 @@ except Exception, e:
     print e
 
 EOF
+
+"Write the buffer to a file so syntax highlighting will work
+w! $TMPDIR/tmp.cdmi
+
 endfunction
