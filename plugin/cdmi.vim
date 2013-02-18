@@ -178,7 +178,7 @@ try:
     print 'GET Status: %s' % response.status_code
     print 'Time: %s' % request_time
 
-    response_body = response.json
+    response_body = response.json()
 
     if response.status_code <= 400:
         #Write the object to the buffer
