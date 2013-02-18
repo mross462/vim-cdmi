@@ -81,7 +81,7 @@ try:
     hdr = {'X-CDMI-Specification-Version': version}
 
     #Generate The URL
-    if secure is True:
+    if secure is "True":
         schema = 'https://'
     else:
         schema = 'http://'
@@ -148,9 +148,13 @@ try:
             #We need to append a '/'
             url = url + '/'
 
-        response = requests.get(url=url,
-            headers=hdr,
-            verify=False)
+        if secure is True:
+            response = requests.get(url=url,
+                headers=hdr,
+                verify=False)
+        else:
+            response = requests.get(url=url,
+                headers=hdr)
 
     else:
         #This CDMI Server Requires Authentication
@@ -164,11 +168,17 @@ try:
             #We need to append a '/'
             url = url + '/'
 
-        response = requests.get(url=url,
+        if secure is True:
+            response = requests.get(url=url,
+                    headers=hdr,
+                    auth=(user,
+                        adminpassword),
+                    verify=False)
+        else:
+            response = requests.get(url=url,
                 headers=hdr,
                 auth=(user,
-                    adminpassword),
-                verify=False)
+                      adminpassword))
 
     #If there is an HTTP error raise it
     response.raise_for_status()
